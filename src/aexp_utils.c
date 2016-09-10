@@ -84,13 +84,13 @@ int poorExp(int x) {
 
 int   waitRequstPrevHist(unsigned long next_frame) {
   unsigned long write_data[4]; 
-  this_frame=GLOBALPARS(G_THIS_FRAME);
+  this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);
   MDF2(fprintf(stderr,"next_frame=0x%08lx, this_frame=0x%08lx\n",next_frame,this_frame)); ///======= 0 here
 
   if (next_frame <= this_frame) return 0; /// too_late
   else if (next_frame > (this_frame+5) ) { /// wait heer as it is too early to schedule histograms
     lseek(fd_fparmsall, next_frame-5+LSEEK_FRAME_WAIT_ABS, SEEK_END);
-    this_frame=GLOBALPARS(G_THIS_FRAME);
+    this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);
   }
 /// schedule all histograms for next_frame-1
   write_data[0]= FRAMEPARS_SETFRAME;
@@ -102,7 +102,7 @@ int   waitRequstPrevHist(unsigned long next_frame) {
 /// now wait for that next frame (if needed)
   if (next_frame > this_frame ) {
     lseek(fd_fparmsall, next_frame+LSEEK_FRAME_WAIT_ABS, SEEK_END);
-    this_frame=GLOBALPARS(G_THIS_FRAME);
+    this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);
     return 1;
   }
   return 0;
@@ -131,13 +131,13 @@ long getPercentile(unsigned long frame,int color, unsigned long fraction, int re
    if (request_colors) { /// at minimum for the new frame request_colors= 1<<color
      if (request_colors & ~ (1<<COLOR_Y_NUMBER)) lseek(fd_histogram_cache, LSEEK_HIST_WAIT_C, SEEK_END); /// wait for all histograms, not just Y (G1)
      else                                        lseek(fd_histogram_cache, LSEEK_HIST_WAIT_Y, SEEK_END); /// wait for just Y (G1)
-    MDF2(fprintf(stderr,"this_frame: 0x%lx,  NOW: 0x%lx\n",this_frame, GLOBALPARS(G_THIS_FRAME)));
+    MDF2(fprintf(stderr,"this_frame: 0x%lx,  NOW: 0x%lx\n",this_frame, GLOBALPARS_SNGL(G_THIS_FRAME)));
      lseek(fd_histogram_cache, LSEEK_HIST_NEEDED + (request_colors << 8), SEEK_END);      /// specify that reverse histogram(s) are needed
      hist_index=lseek(fd_histogram_cache, frame, SEEK_SET);                             /// request histograms for the specified frame
-    MDF2(fprintf(stderr,"got histogram for frame: 0x%lx,  NOW: 0x%lx\n",histogram_cache[hist_index].frame, GLOBALPARS(G_THIS_FRAME)));
+    MDF2(fprintf(stderr,"got histogram for frame: 0x%lx,  NOW: 0x%lx\n",histogram_cache[hist_index].frame, GLOBALPARS_SNGL(G_THIS_FRAME)));
 /// histograms for frame will be available 1 frame later
      if(hist_index <0) {
-       ELP_FERR(fprintf(stderr, "Requested histograms for frame %ld (0x%lx) are not available. this_frame=0x%lx, now=0x%lx\n",frame,frame,this_frame,GLOBALPARS(G_THIS_FRAME) ));
+       ELP_FERR(fprintf(stderr, "Requested histograms for frame %ld (0x%lx) are not available. this_frame=0x%lx, now=0x%lx\n",frame,frame,this_frame,GLOBALPARS_SNGL(G_THIS_FRAME) ));
        return -1;
      }
    }
@@ -302,7 +302,7 @@ int recalibrateDim(void) {
   unsigned long vexpos_was, fraction, dims;
   unsigned long write_data[4];
   int rslt;
-  this_frame=GLOBALPARS(G_THIS_FRAME);
+  this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);
   MDF1(fprintf(stderr,"this_frame: 0x%lx\n",this_frame));
   unsigned long target_frame=this_frame+RECALIBRATE_AHEAD;
   vexpos_was= framePars[target_frame & PARS_FRAMES_MASK].pars[P_VEXPOS];
@@ -321,11 +321,11 @@ int recalibrateDim(void) {
 /// no error check here
   dims= getPercentile(target_frame,0, fraction, 0xf) & 0xffff; /// all colors are needed. Will skip frames
   dims|=getPercentile(target_frame,1, fraction, 0xf) << 16; 
-  GLOBALPARS(G_HIST_DIM_01)=dims;
+  GLOBALPARS_SNGL(G_HIST_DIM_01)=dims;
   dims= getPercentile(target_frame,2, fraction, 0xf) & 0xffff; /// all colors are needed. Will skip frames
   dims|=getPercentile(target_frame,3, fraction, 0xf) << 16; 
-  GLOBALPARS(G_HIST_DIM_23)=dims;
-  MDF1(fprintf(stderr,"dims: 0x%lx NOW: 0x%lx\n",dims, GLOBALPARS(G_THIS_FRAME)));
+  GLOBALPARS_SNGL(G_HIST_DIM_23)=dims;
+  MDF1(fprintf(stderr,"dims: 0x%lx NOW: 0x%lx\n",dims, GLOBALPARS_SNGL(G_THIS_FRAME)));
   lseek(fd_histogram_cache, target_frame+RECALIBRATE_AFTER, SEEK_SET); ///
   return 0;
 }

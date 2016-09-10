@@ -57,7 +57,7 @@
   const char MCP98242_LT=0x5;
   const char MCP98242_RESOL=0x8;
 
-int initFrameParsMmap(void);
+int initFrameParsMmap(int sensor_port);
 long long getNowTime(void);
 int readTemperature(int indx);
 int setResolution(int indx);
@@ -65,30 +65,40 @@ int setResolution(int indx);
 
 int main (int argc, char *argv[]) {
   int daemon_bit=DAEMON_BIT_TEMPERATURE;
+  int sensor_port = 0;
 //  int rslt;
 //  unsigned long prev_seconds=0,prev_useconds=0;
 //  int delta_msec;
 //  unsigned long next_frame;
 
 
-  const char usage[]=   "Usage:\n%s [-b <daemon_bit_number> | -nodaemon [-d <debug_bits>]]\n\n"
+  const char usage[]=   "Usage:\n%s <sensor_port> [-b <daemon_bit_number> | -nodaemon [-d <debug_bits>]]\n\n"
                         "Start temperature measurement daemon, bind it to bit <daemon_bit_number> (0..31, defaults to %d) in P_DAEMON_EN (ELPHEL_DAEMON_EN in PHP).\n"
                         "-nodaemon makes the program update temperatures once and exit.\n"
                         "Optional debug_bits (hex number) enable different groups of debug messages (1 group per bit) to stderr.\n\n";
-
-
   if (argc < 2) {
+     printf (usage,argv[0],daemon_bit);
+     return 0;
+  }
+  sensor_port=strtol(argv[1], NULL, 10);
+  if ((sensor_port < 0) || (sensor_port >= SENSOR_PORTS)) {
+      printf ("Invalid port number\n\n");
+      printf (usage,argv[0],daemon_bit);
+      return 0;
+  }
+
+  if (argc < 3) {
      daemon_bit=DAEMON_BIT_TEMPERATURE;
 
-  } else if (strcasecmp(argv[1], "-nodaemon")==0) {
+  } else if (strcasecmp(argv[2], "-nodaemon")==0) {
      daemon_bit=-1;
-  } else if ((argc < 3) || ((strcasecmp(argv[1], "-b") && (strcasecmp(argv[1], "-d"))))) {
+  } else if ((argc < 4) || ((strcasecmp(argv[2], "-b") && (strcasecmp(argv[2], "-d"))))) {
      printf (usage,argv[0],daemon_bit);
      return 0;
   } else {
-    daemon_bit=strtol(argv[2], NULL, 10);
+    daemon_bit=strtol(argv[3], NULL, 10);
   }
-  if ((argc >=2) && (strcasecmp(argv[argc-2], "-d")==0)) {
+  if ((argc >=3) && (strcasecmp(argv[argc-2], "-d")==0)) {
     temperature_debug=strtol(argv[argc-1], NULL, 16);
   } else temperature_debug=1;
 
@@ -97,9 +107,9 @@ int main (int argc, char *argv[]) {
   if (daemon_bit>31) {printf ("Invalid bit number %d (should be 0..31)\n", daemon_bit); exit (1);}
   if (daemon_bit>=0) fprintf(stderr,"Temperature monitor started, daemon_bit=0x%x\n",daemon_bit);
   else               fprintf(stderr,"Temperature monitor in no-daemon mode (single run)\n");
-  if (initFrameParsMmap()<0) exit (1); /// initialization errors
+  if (initFrameParsMmap(sensor_port)<0) exit (1); /// initialization errors
 //  lseek(fd_fparmsall,10+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
-  tempData= (short *) &(GLOBALPARS(G_TEMPERATURE01)); // 2 32-bit words
+  tempData= (short *) &(GLOBALPARS_SNGL(G_TEMPERATURE01)); // 2 32-bit words
 
   now=getNowTime();
   int numTemperatureDevices=0;
@@ -133,16 +143,16 @@ int main (int argc, char *argv[]) {
 /// Main loop
   int i;
   thatTime=now;
-  thatFrame=GLOBALPARS(G_THIS_FRAME);
+  thatFrame=GLOBALPARS_SNGL(G_THIS_FRAME);
 // sleep one frame or until enabled
    lseek(fd_fparmsall, LSEEK_FRAME_WAIT_REL+1, SEEK_END);   /// skip 1 frame before returning (wait up to 255 frames with such command)
 
   while (1) {
-      MDF6(fprintf(stderr,"Waiting for temperature daemon to be enabled, frame=%ld\n",GLOBALPARS(G_THIS_FRAME)));
+      MDF6(fprintf(stderr,"Waiting for temperature daemon to be enabled, frame=%ld\n",GLOBALPARS_SNGL(G_THIS_FRAME)));
       lseek(fd_fparmsall, LSEEK_DAEMON_FRAME+daemon_bit, SEEK_END);   /// wait for temperature daemon to be enabled (let it sleep if not)
       now=getNowTime();
       MDF3(fprintf(stderr,"Now is %d ms. due is %d ms \n",(int)((now/((long long)1000)) & 0x7fffffff),(int)((due_time/((long long)1000)) & 0x7fffffff)));
-      thisFrame=GLOBALPARS(G_THIS_FRAME);
+      thisFrame=GLOBALPARS_SNGL(G_THIS_FRAME);
       if (now>=due_time){
         MDF3(fprintf(stderr,"  It is due!\n"));
 
@@ -190,15 +200,15 @@ int main (int argc, char *argv[]) {
 
   long long getNowTime(void){
       lseek(fd_fparmsall, LSEEK_GET_FPGA_TIME, SEEK_END);   /// get FPGA time
-      long long result=GLOBALPARS(G_SECONDS);
+      long long result=GLOBALPARS_SNGL(G_SECONDS);
       result*=1000000;
-      result+=GLOBALPARS(G_MICROSECONDS);
-      MDF4(fprintf(stderr,"getNowTime(): %ld.%06ld, result=%d, == %d ms\n",GLOBALPARS(G_SECONDS),GLOBALPARS(G_MICROSECONDS), (int) (result & 0x7fffffff),  (int) ((result/((long long) 1000)) & 0x7fffffff)));
+      result+=GLOBALPARS_SNGL(G_MICROSECONDS);
+      MDF4(fprintf(stderr,"getNowTime(): %ld.%06ld, result=%d, == %d ms\n",GLOBALPARS_SNGL(G_SECONDS),GLOBALPARS_SNGL(G_MICROSECONDS), (int) (result & 0x7fffffff),  (int) ((result/((long long) 1000)) & 0x7fffffff)));
       return result;
   }
 
   int readTemperature(int indx){
-     MDF2(fprintf(stderr, "Measuring temperature data for index=%d, frame # %ld, slaves[index]=%d\n",indx,GLOBALPARS(G_THIS_FRAME),slaves[indx]));
+     MDF2(fprintf(stderr, "Measuring temperature data for index=%d, frame # %ld, slaves[index]=%d\n",indx,GLOBALPARS_SNGL(G_THIS_FRAME),slaves[indx]));
 
     int result=-1;
     int devfd,ctlfd;
@@ -267,7 +277,7 @@ int main (int argc, char *argv[]) {
       close (ctlfd);
     }
     close (devfd);
-    MDF1(fprintf(stderr,"Temperature data for index=%d is 0x%x, frame # %ld\n",indx, result, GLOBALPARS(G_THIS_FRAME)));
+    MDF1(fprintf(stderr,"Temperature data for index=%d is 0x%x, frame # %ld\n",indx, result, GLOBALPARS_SNGL(G_THIS_FRAME)));
     return result;
 
 /*
@@ -299,14 +309,14 @@ MDF2(fprintf(stderr, "Measuring temperature failed\n"));
       close (ctlfd);
     }
     close (devfd);
-     MDF2(fprintf(stderr,"Temperature data for index=%d is 0x%x, frame # %ld\n",indx, result, GLOBALPARS(G_THIS_FRAME)));
+     MDF2(fprintf(stderr,"Temperature data for index=%d is 0x%x, frame # %ld\n",indx, result, GLOBALPARS_SNGL(G_THIS_FRAME)));
 
     return result;
 */
   }
 
   int setResolution(int indx){
-    MDF2(fprintf(stderr, "Setting full temperature resolution for index=%d, frame # %ld, slaves[index]=%d\n",indx,GLOBALPARS(G_THIS_FRAME),slaves[indx]));
+    MDF2(fprintf(stderr, "Setting full temperature resolution for index=%d, frame # %ld, slaves[index]=%d\n",indx,GLOBALPARS_SNGL(G_THIS_FRAME),slaves[indx]));
     int devfd,ctlfd;
     unsigned char data8[2];
     if (indx<1) return 0; // no resolution settings fro system temperature, only for SFE
@@ -348,8 +358,13 @@ MDF2(fprintf(stderr, "Measuring temperature failed\n"));
  * uses global variables for files and mmap-ed data so they are accessible everywhere
  * @return 0 - OK, <0 - problems opening/mma-ing
  */
-int initFrameParsMmap(void) {
-  const char framepars_driver_name[]="/dev/frameparsall";
+int initFrameParsMmap(int sensor_port) {
+    const char *framepars_dev_names[SENSOR_PORTS] = {
+            DEV393_PATH(DEV393_FRAMEPARS0),
+            DEV393_PATH(DEV393_FRAMEPARS1),
+            DEV393_PATH(DEV393_FRAMEPARS2),
+            DEV393_PATH(DEV393_FRAMEPARS3)};
+  const char *framepars_driver_name=framepars_dev_names[sensor_port];
 ///Frame parameters file open/mmap (read/write)
   fd_fparmsall= open(framepars_driver_name, O_RDWR);
   if (fd_fparmsall <0) {

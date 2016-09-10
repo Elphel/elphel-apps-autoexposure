@@ -46,7 +46,7 @@ int exposureHDR (int frame, int target_frame) {
    int vexpos, vexpos_HDR;
    int rslt;
    if (!((HDR_mode=framePars[target_frame8].pars[P_HDR_DUR])))  return 0; /// HDR mode is disabled
-   MDF5(fprintf(stderr,"frame=0x%x target_frame=0x%x GLOBALPARS(G_THIS_FRAME)=0x%x\n",(int) frame, (int) target_frame, (int)GLOBALPARS(G_THIS_FRAME)));
+   MDF5(fprintf(stderr,"frame=0x%x target_frame=0x%x GLOBALPARS_SNGL(G_THIS_FRAME)=0x%x\n",(int) frame, (int) target_frame, (int)GLOBALPARS_SNGL(G_THIS_FRAME)));
 
    if ((HDR_mode<1) || (HDR_mode>2)) {
      ELP_FERR(fprintf(stderr, "Wrong HDR mode %d (only 1 or 2 are supported)\n",HDR_mode));
@@ -129,7 +129,7 @@ int exposureHDR (int frame, int target_frame) {
 int skipHDR(int mode, unsigned long frame) {
   int patt;
   int skip;
-  MDF5(fprintf(stderr,"mode=%d frame=0x%x GLOBALPARS(G_THIS_FRAME)=0x%x\n",(int) mode, (int) frame, (int)GLOBALPARS(G_THIS_FRAME)));
+  MDF5(fprintf(stderr,"mode=%d frame=0x%x GLOBALPARS_SNGL(G_THIS_FRAME)=0x%x\n",(int) mode, (int) frame, (int)GLOBALPARS_SNGL(G_THIS_FRAME)));
 
   switch (mode) {
    case 0: return 0;
@@ -151,6 +151,6 @@ int skipHDR(int mode, unsigned long frame) {
 //  lseek(fd_histogram_cache, skip,                  SEEK_CUR); /// just wait until the Y histogram will available for non-HDR frame
 //  lseek(fd_histogram_cache, skip-1,                SEEK_CUR); /// just wait until the Y histogram will available for non-HDR frame
   lseek(fd_histogram_cache, skip,                SEEK_CUR); /// just wait until the Y histogram will available for non-HDR frame
-  MDF5(fprintf(stderr,"mode=%d frame=0x%x skip=%d GLOBALPARS(G_THIS_FRAME)=0x%x\n",(int) mode, (int) frame, (int) skip, (int)GLOBALPARS(G_THIS_FRAME)));
+  MDF5(fprintf(stderr,"mode=%d frame=0x%x skip=%d GLOBALPARS_SNGL(G_THIS_FRAME)=0x%x\n",(int) mode, (int) frame, (int) skip, (int)GLOBALPARS_SNGL(G_THIS_FRAME)));
   return 1;
 }

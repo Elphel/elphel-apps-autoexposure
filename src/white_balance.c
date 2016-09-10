@@ -58,7 +58,7 @@
 
 #include "autoexposure.h"
 void initWhiteBalanceCorr(void) {
-  GLOBALPARS(G_NEXT_WB_FRAME)=0;
+  GLOBALPARS_SNGL(G_NEXT_WB_FRAME)=0;
 }
 #define MIN_LEVEL_TO_ADJUST 0x1000 /// 1/16 of the full scale 
 #define MIN_PIXELS_TO_ADJUST 0x100 /// one 32x32 block, 1 color
@@ -74,7 +74,7 @@ void initWhiteBalanceCorr(void) {
 /// TODO: SupportT P_WB_MASK - now it is just ON/OFF. NOTE:When the bit is off it should be scaled with the G1 color!
 
 int whiteBalanceCorr(int frame, int target_frame, int ae_rslt) {
-   MDF3(fprintf(stderr,"frame=0x%x, target_frame=0x%x G_WB_INTEGERR=0x%08lx\n",frame,target_frame,GLOBALPARS(G_WB_INTEGERR))); ///======= 0 here
+   MDF3(fprintf(stderr,"frame=0x%x, target_frame=0x%x G_WB_INTEGERR=0x%08lx\n",frame,target_frame,GLOBALPARS_SNGL(G_WB_INTEGERR))); ///======= 0 here
    int rslt;
    int colors;
    unsigned long write_data[18];
@@ -101,7 +101,7 @@ int whiteBalanceCorr(int frame, int target_frame, int ae_rslt) {
    int wb_period_nochange=(framePars[target_frame8].pars[P_WB_PERIOD] >> 8 ) & 0xff; /// next byte
    int wb_dont_sync=      (framePars[target_frame8].pars[P_WB_PERIOD] & 0x10000); /// don't try to synchronize to availble histograms
    int aerr=0; // just to keep compiler happy
-//   int * wb_err= (int *) &(GLOBALPARS(G_WB_INTEGERR)); /// so it will be signed
+//   int * wb_err= (int *) &(GLOBALPARS_SNGL(G_WB_INTEGERR)); /// so it will be signed
    static int wb_err[4]; /// individual per-color. Maybe make visible outside? Or not?
 
    if (!wb_period_change)   wb_period_change=  DEFAULT_WB_PERIOD_CHANGE;
@@ -109,11 +109,11 @@ int whiteBalanceCorr(int frame, int target_frame, int ae_rslt) {
 
 
    if (!((colors=framePars[target_frame8].pars[P_WB_CTRL] & 0x0f)) || !(framePars[target_frame8].pars[P_WB_CTRL] & (1<<WB_CTRL_BIT_EN))) {
-     GLOBALPARS(G_NEXT_WB_FRAME)=frame+wb_period_change;
+     GLOBALPARS_SNGL(G_NEXT_WB_FRAME)=frame+wb_period_change;
      return 0; /// white balance is off (mask==0)
    }
-   if (GLOBALPARS(G_NEXT_WB_FRAME) > frame) return 0; /// too early to bother
-   MDF3(fprintf(stderr,"G_WB_INTEGERR=0x%08lx\n",GLOBALPARS(G_WB_INTEGERR))); ///======= 0 here
+   if (GLOBALPARS_SNGL(G_NEXT_WB_FRAME) > frame) return 0; /// too early to bother
+   MDF3(fprintf(stderr,"G_WB_INTEGERR=0x%08lx\n",GLOBALPARS_SNGL(G_WB_INTEGERR))); ///======= 0 here
    colors |= (1 << COLOR_Y_NUMBER);
 /// Get the histogram (including percentiles)
    lseek(fd_histogram_cache, LSEEK_HIST_WAIT_C, SEEK_END); /// wait for all histograms, not just Y (G1)
@@ -126,7 +126,7 @@ int whiteBalanceCorr(int frame, int target_frame, int ae_rslt) {
 
 
    if (histogram_cache[hist_index].frame < (frame-1)) { /// histogram is too old - try again
-     GLOBALPARS(G_NEXT_WB_FRAME)=frame+1;
+     GLOBALPARS_SNGL(G_NEXT_WB_FRAME)=frame+1;
      if (wb_dont_sync) return 0; /// will request histogram for this frame
 /// repeat up to 8 times trying to get a fresh histogram
      for (i=0; i<8; i++) {
@@ -138,7 +138,7 @@ int whiteBalanceCorr(int frame, int target_frame, int ae_rslt) {
        if (histogram_cache[hist_index].frame == (frame-1)) break;
      }
      if (histogram_cache[hist_index].frame < (frame-1)) { /// histogram is too old - try again
-       GLOBALPARS(G_NEXT_WB_FRAME)=frame+1;
+       GLOBALPARS_SNGL(G_NEXT_WB_FRAME)=frame+1;
        return 0; /// will request histogram for this frame
      }
    }
@@ -295,7 +295,7 @@ int whiteBalanceCorr(int frame, int target_frame, int ae_rslt) {
   }
   rslt=write(fd_fparmsall, write_data, (i << 2));
   if (rslt < (i << 2)) return -errno;
-  GLOBALPARS(G_NEXT_WB_FRAME)=frame+framePars[target_frame8].pars[P_WB_PERIOD]; /// modify overall next_frame
+  GLOBALPARS_SNGL(G_NEXT_WB_FRAME)=frame+framePars[target_frame8].pars[P_WB_PERIOD]; /// modify overall next_frame
   return 1;
 /// TODO: add error integration, don't rush for instant changes?
 

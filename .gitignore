@@ -10,3 +10,6 @@ generated*
 sysroots
 bitbake-logs
 /temp/
+*.o
+*.cgi
+bitbake-logs

@@ -50,8 +50,9 @@
 #include <sys/mman.h>      /* mmap */
 #include <sys/ioctl.h>
 
-#include <asm/elphel/c313a.h>
-#include <asm/elphel/exifa.h>
+#include <elphel/c313a.h>
+#include <elphel/x393_devices.h>
+//#include <elphel/exifa.h>
 #include <asm/byteorder.h>
 
 #include "aexp_utils.h"
@@ -59,6 +60,7 @@
 #include "white_balance.h"
 #include "hdr_control.h"
 #include "globalsinit.h"
+
 //#if ELPHEL_DEBUG
  #define THIS_DEBUG 1
 //#else

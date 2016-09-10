@@ -57,10 +57,16 @@
  * uses global variables for files and mmap-ed data so they are accessible everywhere
  * @return 0 - OK, <0 - problems opening/mma-ing
  */
-int initFilesMmap(void) {
-  const char framepars_driver_name[]="/dev/frameparsall";
-  const char histogram_driver_name[]="/dev/histogram_cache";
-  const char gamma_driver_name[]=    "/dev/gamma_cache";
+int initFilesMmap(int sensor_port) {
+    const char *framepars_dev_names[SENSOR_PORTS] = {
+            DEV393_PATH(DEV393_FRAMEPARS0),
+            DEV393_PATH(DEV393_FRAMEPARS1),
+            DEV393_PATH(DEV393_FRAMEPARS2),
+            DEV393_PATH(DEV393_FRAMEPARS3)};
+
+  const char *framepars_driver_name=framepars_dev_names[sensor_port];
+  const char histogram_driver_name[]=DEV393_PATH(DEV393_HISTOGRAM);
+  const char gamma_driver_name[]=    DEV393_PATH(DEV393_GAMMA);
 ///Frame parameters file open/mmap (read/write)
   fd_fparmsall= open(framepars_driver_name, O_RDWR);
   if (fd_fparmsall <0) {
@@ -118,12 +124,12 @@ int initFilesMmap(void) {
 int initParams(int daemon_bit) {
     aex_recover_cntr=0;
     lseek(fd_histogram_cache, LSEEK_DAEMON_HIST_Y+daemon_bit, SEEK_END);   /// wait for autoexposure daemon to be enabled
-    GLOBALPARS(G_AE_INTEGERR)=0; /// reset running error
-    GLOBALPARS(G_WB_INTEGERR)=0; /// reset running error
-    this_frame=GLOBALPARS(G_THIS_FRAME);  /// set global frame number
-    if (GLOBALPARS(G_HIST_DIM_01)==0) {
-      GLOBALPARS(G_HIST_DIM_01)=DEFAULT_BLACK_CALIB | (DEFAULT_BLACK_CALIB <<16);
-      GLOBALPARS(G_HIST_DIM_23)=DEFAULT_BLACK_CALIB | (DEFAULT_BLACK_CALIB <<16);
+    GLOBALPARS_SNGL(G_AE_INTEGERR)=0; /// reset running error
+    GLOBALPARS_SNGL(G_WB_INTEGERR)=0; /// reset running error
+    this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);  /// set global frame number
+    if (GLOBALPARS_SNGL(G_HIST_DIM_01)==0) {
+      GLOBALPARS_SNGL(G_HIST_DIM_01)=DEFAULT_BLACK_CALIB | (DEFAULT_BLACK_CALIB <<16);
+      GLOBALPARS_SNGL(G_HIST_DIM_23)=DEFAULT_BLACK_CALIB | (DEFAULT_BLACK_CALIB <<16);
       return 1 ; /// used default, no real calibration
     }
 //#define P_AUTOEXP_EXP_MAX 81 //unsigned long exp_max;		/* 100 usec == 1 etc... */

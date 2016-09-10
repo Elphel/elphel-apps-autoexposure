@@ -1,7 +1,7 @@
 /*!***************************************************************************
 *! FILE NAME  : globalsinit.h
 *! DESCRIPTION: Daemon to adjust camera exposure and white balance
-*! Copyright (C) 2008 Elphel, Inc.
+*! Copyright (C) 2008-2016 Elphel, Inc.
 *! -----------------------------------------------------------------------------**
 *!  This program is free software: you can redistribute it and/or modify
 *!  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@
   extern unsigned long              this_frame;
   extern int                        autoexposure_debug;
 
-int initFilesMmap(void);
+int initFilesMmap(int sensor_port);
 int initParams(int daemon_bit);
 
 

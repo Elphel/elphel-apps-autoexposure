@@ -93,9 +93,13 @@
 *!
 */ 
 #include "autoexposure.h"
+//#define MAX_SENSORS  4        ///< maximal number of sensor attached (modify some hard-wired constants below if this to be changed)
+//#define SENSOR_PORTS 4        ///< Number of sensor ports (each has individual framepars_all_t
 
 int main (int argc, char *argv[]) {
-  int daemon_bit=0; ///TODO: - make it an argument
+  int daemon_bit=0;
+  int sensor_port = 0;
+  int sensor_subchannel = 0;
 //  int perc;
   int rslt, ae_rslt;
   int hdr_mode; /// 0 - off, 1 each other frame, 2 - 2 on, 2 - off 
@@ -103,27 +107,39 @@ int main (int argc, char *argv[]) {
   int exp_ahead; 
   unsigned long next_frame;
 
-  const char usage[]=   "Usage:\n%s [-b <daemon_bit_number> [-d <debug_bits>]]\n\n"
+  const char usage[]=   "Usage:\n%s -p <sensor port(0..3)> -c <sensor sub channel(0..3)> [-b <daemon_bit_number> [-d <debug_bits>]]\n\n"
                         "Start autoexposure daemon, bind it to bit <daemon_bit_number> (0..31) in P_DAEMON_EN (ELPHEL_DAEMON_EN in PHP)\n"
                         "Optional debug_bits (hex number) enable different groups of debug messages (1 group per bit) to stderr\n\n";
+// Currently it just verifies that specified keys are at the required positions. TODO: use library to parse
+  if ((argc < 5) || (strcasecmp(argv[1], "-p")) || (strcasecmp(argv[3], "-c"))){
+      printf (usage,argv[0]);
+      return 0;
+  }
+  sensor_port =       strtol(argv[2], NULL, 16);
+  sensor_subchannel = strtol(argv[4], NULL, 16);
+  if ((sensor_port < 0) || (sensor_port >= SENSOR_PORTS) || (sensor_subchannel < 0) || (sensor_subchannel >= MAX_SENSORS) ) {
+      printf ("Invalid number of port/subchannel\n\n");
+      printf (usage,argv[0]);
+      return 0;
+  }
 
-  if (argc < 2) {
-     daemon_bit=DAEMON_BIT_AUTOEXPOSURE;
-  } else if ((argc < 3) || (strcasecmp(argv[1], "-b"))) {
+  if (argc < 6) {
+     daemon_bit=DAEMON_BIT_AUTOEXPOSURE+sensor_subchannel;
+  } else if ((argc < 7) || (strcasecmp(argv[5], "-b"))) {
      printf (usage,argv[0]);
      return 0;
   }
-  if ((argc >=5) && (strcasecmp(argv[3], "-d")==0)) {
-    autoexposure_debug=strtol(argv[4], NULL, 16);
+  if ((argc >=9) && (strcasecmp(argv[7], "-d")==0)) {
+    autoexposure_debug=strtol(argv[8], NULL, 16);
   } else autoexposure_debug=1;
 
-  daemon_bit=strtol(argv[2], NULL, 10);
+  daemon_bit=strtol(argv[6], NULL, 10);
   if ((daemon_bit<0) || (daemon_bit>31)) {printf ("Invalid bit number %d (should be 0..31)\n", daemon_bit); exit (1);}
   fprintf(stderr,"autoexposure started, daemon_bit=0x%x, debug=0x%x\n",daemon_bit,autoexposure_debug);
 //  MDF1(fprintf(stderr,"\n"));
-  if (initFilesMmap()<0) exit (1); /// initialization errors
+  if (initFilesMmap(sensor_port)<0) exit (1); /// initialization errors
   if (autoexposure_debug <0) { /// tempoorary hack for testing
-    GLOBALPARS(G_DEBUG)=0;
+    GLOBALPARS_SNGL(G_DEBUG)=0;
     exit (0);
   }
   MDF0(fprintf(stderr,"autoexposure started, daemon_bit=0x%x, debug=0x%x\n",daemon_bit,autoexposure_debug));
@@ -138,26 +154,26 @@ int main (int argc, char *argv[]) {
 /// Main loop
 
   while (1) {
-      this_frame=GLOBALPARS(G_THIS_FRAME);
+      this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);
       MDF6(fprintf(stderr,"Waiting for autoexposure daemon to be enabled\n"));
       lseek(fd_histogram_cache, LSEEK_DAEMON_HIST_Y+daemon_bit, SEEK_END);   /// wait for autoexposure daemon to be enabled (let it sleep if not)
-      if (GLOBALPARS(G_THIS_FRAME) != this_frame) {
+      if (GLOBALPARS_SNGL(G_THIS_FRAME) != this_frame) {
 ///TODO: Make it possible for this_frame to lag slightly (1 frame) to compensate for CPU being busy with other tasks?
 /// Need to re-initialize after long sleep 
        if (initParams(daemon_bit)<0) exit (1); /// initialization errors
       }
 /// Is exposure black level calibration requested (will produce 2 (or 1, depending on trigger mode?) dark frames
-      if (GLOBALPARS(G_HIST_DIM_01)==0xffffffff)  {
+      if (GLOBALPARS_SNGL(G_HIST_DIM_01)==0xffffffff)  {
         rslt=recalibrateDim();
-        MDF1(fprintf(stderr,"G_HIST_DIM_01: 0x%08lx, G_HIST_DIM_23: 0x%08lx, recalibrateDim()->%d\n",GLOBALPARS(G_HIST_DIM_01),GLOBALPARS(G_HIST_DIM_23),rslt));
-        this_frame=GLOBALPARS(G_THIS_FRAME);
+        MDF1(fprintf(stderr,"G_HIST_DIM_01: 0x%08lx, G_HIST_DIM_23: 0x%08lx, recalibrateDim()->%d\n",GLOBALPARS_SNGL(G_HIST_DIM_01),GLOBALPARS_SNGL(G_HIST_DIM_23),rslt));
+        this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);
       }
 /// In HDR mode make sure we skip those different frames;
       hdr_mode=get_imageParamsThis(P_HDR_DUR);
       if (hdr_mode>2) hdr_mode=2;
       if (hdr_mode>0) {
         skipHDR(hdr_mode,this_frame);
-        this_frame=GLOBALPARS(G_THIS_FRAME);
+        this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);
       }
       exp_ahead=get_imageParamsThis(P_EXP_AHEAD);
       if (!exp_ahead) exp_ahead = 3;
@@ -172,7 +188,7 @@ MDF3(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x
 /// if it is too far ahead, wait some frames
          if ((hdr_target_frame-this_frame)>(exp_ahead+1)) {
             lseek(fd_fparmsall, (hdr_target_frame-exp_ahead-1)+LSEEK_FRAME_WAIT_ABS, SEEK_END);
-            this_frame=GLOBALPARS(G_THIS_FRAME);
+            this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);
          }
          exp_ahead=hdr_target_frame-this_frame;
       }
@@ -181,9 +197,9 @@ MDF3(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x
 MDF3(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x%x, old_that_vexpos = 0x%x\n",  (int) this_frame,(int) (this_frame+exp_ahead), (int) old_vexp, (int) old_that_vexpos));
       if (((ae_rslt=aexpCorr(COLOR_Y_NUMBER, this_frame, this_frame+exp_ahead )))<0) break; /// restart on errors
 
-//GLOBALPARS(G_AE_INTEGERR)
+//GLOBALPARS_SNGL(G_AE_INTEGERR)
       vexp= framePars[(this_frame+exp_ahead)  & PARS_FRAMES_MASK].pars[P_VEXPOS];
-      next_frame=GLOBALPARS(G_NEXT_AE_FRAME);
+      next_frame=GLOBALPARS_SNGL(G_NEXT_AE_FRAME);
       if (ae_rslt>0) MDF1(fprintf(stderr,"aexpCorr(0x%x, 0x%lx, 0%lx) -> %d, VEXPOS will be 0x%lx (0x%lx , 0x%lx), next_frame=0x%lx\n", COLOR_Y_NUMBER,this_frame,this_frame+exp_ahead,ae_rslt,vexp,old_vexp, old_that_vexpos,next_frame));
 ///  WB processing
       rslt=whiteBalanceCorr(this_frame, this_frame+exp_ahead, ae_rslt );
@@ -212,11 +228,11 @@ MDF3(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x
 ///    histograms are only availble for the previous frame, so this_frame-1
 /*
         perc=getPercentile(next_frame-1,COLOR_Y_NUMBER, framePars[next_frame & PARS_FRAMES_MASK].pars[P_AEXP_FRACPIX], 1 << COLOR_Y_NUMBER);
-        MDF6(fprintf(stderr,"FRAME: 0x%lx, COLOR: %d, FRACTION: 0x%04lx RESULT:0x%04x, NOW: 0x%lx\n",next_frame-1,COLOR_Y_NUMBER,framePars[next_frame & PARS_FRAMES_MASK].pars[P_AEXP_FRACPIX],perc,GLOBALPARS(G_THIS_FRAME)));
+        MDF6(fprintf(stderr,"FRAME: 0x%lx, COLOR: %d, FRACTION: 0x%04lx RESULT:0x%04x, NOW: 0x%lx\n",next_frame-1,COLOR_Y_NUMBER,framePars[next_frame & PARS_FRAMES_MASK].pars[P_AEXP_FRACPIX],perc,GLOBALPARS_SNGL(G_THIS_FRAME)));
 */
     }
     ELP_FERR(fprintf (stderr,"Restarting autoexposure due to errors, skipping a frame\n"));
-    lseek(fd_fparmsall, GLOBALPARS(G_THIS_FRAME) + 1+LSEEK_FRAME_WAIT_ABS, SEEK_END);
+    lseek(fd_fparmsall, GLOBALPARS_SNGL(G_THIS_FRAME) + 1+LSEEK_FRAME_WAIT_ABS, SEEK_END);
 
   }
   return 0;

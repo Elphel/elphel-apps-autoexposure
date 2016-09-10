@@ -58,7 +58,7 @@
 
 #include "autoexposure.h"
 void initAexpCorr(void) {
-  GLOBALPARS(G_NEXT_AE_FRAME)=0; ///NOTE - autoexposure was stuck for a hours when I tried resetting frame number...
+  GLOBALPARS_SNGL(G_NEXT_AE_FRAME)=0; ///NOTE - autoexposure was stuck for a hours when I tried resetting frame number...
 }
 /**
  * @brief Single autoexposure correction step 
@@ -102,27 +102,27 @@ int aexpCorr(int color, int frame, int target_frame) {
   int ae_dont_sync=(framePars[target_frame8].pars[P_AE_PERIOD] & 0x10000); /// don't try to synchronize to availble histograms
   int i;
   int aerr=0; // just to keep compiler happy
-  int * ae_err= (int *) &(GLOBALPARS(G_AE_INTEGERR)); /// so it will be signed
+  int * ae_err= (int *) &(GLOBALPARS_SNGL(G_AE_INTEGERR)); /// so it will be signed
   if (!ae_period_change) ae_period_change=DEFAULT_AE_PERIOD_CHANGE;
   if (!ae_period_nochange) ae_period_nochange=DEFAULT_AE_PERIOD_NOCHANGE;
 //  unsigned long overexp_scale;
   if (!framePars[target_frame & PARS_FRAMES_MASK].pars[P_AUTOEXP_ON]) {
-    GLOBALPARS(G_NEXT_AE_FRAME)=frame+ae_period_change;
+    GLOBALPARS_SNGL(G_NEXT_AE_FRAME)=frame+ae_period_change;
     return 0; /// autoexposure is turned off
   }
-  if (GLOBALPARS(G_NEXT_AE_FRAME)>frame) return 0; /// too early to bother
+  if (GLOBALPARS_SNGL(G_NEXT_AE_FRAME)>frame) return 0; /// too early to bother
 
   MDF3(fprintf(stderr,"*ae_err=%d\n",*ae_err)); ///======= 0 here
 
   frac=framePars[target_frame & PARS_FRAMES_MASK].pars[P_AEXP_FRACPIX];
 //  level=framePars[target_frame & PARS_FRAMES_MASK].pars[P_AEXP_LEVEL];
 /// get (approximate if not updated) percentile for dim (1 scanline exposure) image -to use as a zero point exposure
-  dim=(GLOBALPARS((color>1)?G_HIST_DIM_23:G_HIST_DIM_01) >> ((color & 1)? 16 : 0)) & 0xffff;
+  dim=(GLOBALPARS_SNGL((color>1)?G_HIST_DIM_23:G_HIST_DIM_01) >> ((color & 1)? 16 : 0)) & 0xffff;
 /// measure
   perc=getPercentile(frame-1,color, frac, 1 << color); ///sets global hist_index, gamma_index
-//      MDF2(fprintf(stderr,"got histogram for frame: 0x%lx,  NOW: 0x%lx\n",histogram_cache[hist_index].frame, GLOBALPARS(G_THIS_FRAME)));
+//      MDF2(fprintf(stderr,"got histogram for frame: 0x%lx,  NOW: 0x%lx\n",histogram_cache[hist_index].frame, GLOBALPARS_SNGL(G_THIS_FRAME)));
   if (histogram_cache[hist_index].frame < (frame-1)) { /// histogram is too old - try again
-    GLOBALPARS(G_NEXT_AE_FRAME)=frame+1;
+    GLOBALPARS_SNGL(G_NEXT_AE_FRAME)=frame+1;
     if (ae_dont_sync) return 0; /// will request histogram for this frame
 /// repeat up to 8 times trying to get a fresh histogram
     for (i=0; i<8; i++) {
@@ -134,7 +134,7 @@ int aexpCorr(int color, int frame, int target_frame) {
       if (histogram_cache[hist_index].frame == (frame-1)) break;
     }
     if (histogram_cache[hist_index].frame < (frame-1)) { /// histogram is too old - try again
-      GLOBALPARS(G_NEXT_AE_FRAME)=frame+1;
+      GLOBALPARS_SNGL(G_NEXT_AE_FRAME)=frame+1;
       return 0; /// will request histogram for this frame
     }
   }
@@ -143,7 +143,7 @@ int aexpCorr(int color, int frame, int target_frame) {
   level=gammaReverse (level_gamma);
   MDF3(fprintf(stderr,"->>> frame=0x%x, target_frame=0x%x,dim=0x%04x, frac=0x%04x, level=0x%x,level_gamma=0x%x, perc=0x%04x\n",frame,target_frame,dim,frac,level,level_gamma,perc));
   if (perc <0) {
-     GLOBALPARS(G_NEXT_AE_FRAME)=frame+ae_period_change;
+     GLOBALPARS_SNGL(G_NEXT_AE_FRAME)=frame+ae_period_change;
      return -1; ///getPercentile() failed
   }
 ///
@@ -212,7 +212,7 @@ int aexpCorr(int color, int frame, int target_frame) {
   MDF3(fprintf(stderr,"old_vexpos=0x%x, new_vexpos=0x%x, aerr=%d, ae_err=%d\n", old_vexpos, new_vexpos, aerr, *ae_err));
    if (new_vexpos==old_vexpos) {
      MDF3(fprintf(stderr,"No correction: thrshold=%d, aerr=%d\n",error_thresh,aerr));  ///======= 1 here
-     GLOBALPARS(G_NEXT_AE_FRAME)=frame+ae_period_nochange; /// try again next frame (extend in HDR)
+     GLOBALPARS_SNGL(G_NEXT_AE_FRAME)=frame+ae_period_nochange; /// try again next frame (extend in HDR)
      return 0; /// too little error - no change in exposure
   }
 //  *ae_err=0; /// reset error accumulator TODO: If scaled - reduce resudual error, not reset it
@@ -239,7 +239,7 @@ int aexpCorr(int color, int frame, int target_frame) {
   }
   rslt=write(fd_fparmsall, write_data, sizeof(write_data));
   if (rslt < sizeof(write_data)) return -errno;
-  GLOBALPARS(G_NEXT_AE_FRAME)=frame+ae_period_change;
+  GLOBALPARS_SNGL(G_NEXT_AE_FRAME)=frame+ae_period_change;
   return 1;
 }
 

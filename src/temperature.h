@@ -44,7 +44,9 @@
 #include <sys/mman.h>      /* mmap */
 #include <sys/ioctl.h>
 
-#include <asm/elphel/c313a.h>
+#include <elphel/c313a.h>
+#include <elphel/x393_devices.h>
+
 //#include <asm/elphel/exifa.h>
 #include <asm/byteorder.h>
 
