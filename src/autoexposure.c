@@ -137,7 +137,7 @@ int main (int argc, char *argv[]) {
   if ((daemon_bit<0) || (daemon_bit>31)) {printf ("Invalid bit number %d (should be 0..31)\n", daemon_bit); exit (1);}
   fprintf(stderr,"autoexposure started, daemon_bit=0x%x, debug=0x%x\n",daemon_bit,autoexposure_debug);
 //  MDF1(fprintf(stderr,"\n"));
-  if (initFilesMmap(sensor_port)<0) exit (1); /// initialization errors
+  if (initFilesMmap(sensor_port, sensor_subchannel)<0) exit (1); /// initialization errors
   if (autoexposure_debug <0) { /// tempoorary hack for testing
     GLOBALPARS_SNGL(G_DEBUG)=0;
     exit (0);
@@ -181,7 +181,7 @@ int main (int argc, char *argv[]) {
 /// debugging
    old_vexp=framePars[(this_frame+exp_ahead)  & PARS_FRAMES_MASK].pars[P_VEXPOS];
    old_that_vexpos= get_imageParamsThatValid(P_VEXPOS, this_frame-1);
-MDF3(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x%x, old_that_vexpos = 0x%x\n",  (int) this_frame,(int) (this_frame+exp_ahead), (int) old_vexp, (int) old_that_vexpos));
+MDF8(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x%x, old_that_vexpos = 0x%x\n",  (int) this_frame,(int) (this_frame+exp_ahead), (int) old_vexp, (int) old_that_vexpos));
       if (hdr_mode>0) { /// align target autoexposure frame to hdr mode
          if (hdr_target_frame & 1) hdr_target_frame++;
          if ((hdr_mode>1) && (hdr_target_frame & 2)) hdr_target_frame+=2;
@@ -194,7 +194,7 @@ MDF3(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x
       }
    old_vexp=framePars[(this_frame+exp_ahead)  & PARS_FRAMES_MASK].pars[P_VEXPOS];
    old_that_vexpos= get_imageParamsThatValid(P_VEXPOS, this_frame-1);
-MDF3(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x%x, old_that_vexpos = 0x%x\n",  (int) this_frame,(int) (this_frame+exp_ahead), (int) old_vexp, (int) old_that_vexpos));
+MDF8(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x%x, old_that_vexpos = 0x%x\n",  (int) this_frame,(int) (this_frame+exp_ahead), (int) old_vexp, (int) old_that_vexpos));
       if (((ae_rslt=aexpCorr(COLOR_Y_NUMBER, this_frame, this_frame+exp_ahead )))<0) break; /// restart on errors
 
 //GLOBALPARS_SNGL(G_AE_INTEGERR)

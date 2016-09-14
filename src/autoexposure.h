@@ -78,6 +78,10 @@
   #define MDF5(x) { if (autoexposure_debug & (1 << 5)) {fprintf(stderr,"%s:%d:%s: ",__FILE__,__LINE__,__FUNCTION__);x;} }
   #define MDF6(x) { if (autoexposure_debug & (1 << 6)) {fprintf(stderr,"%s:%d:%s: ",__FILE__,__LINE__,__FUNCTION__);x;} }
   #define MDF7(x) { if (autoexposure_debug & (1 << 7)) {fprintf(stderr,"%s:%d:%s: ",__FILE__,__LINE__,__FUNCTION__);x;} }
+//moved from MDF3 - all what is active when autoexposure is off
+  #define MDF8(x) { if (autoexposure_debug & (1 << 8)) {fprintf(stderr,"%s:%d:%s: ",__FILE__,__LINE__,__FUNCTION__);x;} }
+//moved from MDF3 - all what is active when white balance is off
+  #define MDF9(x) { if (autoexposure_debug & (1 << 9)) {fprintf(stderr,"%s:%d:%s: ",__FILE__,__LINE__,__FUNCTION__);x;} }
 #else
   #define MDF0(x)
   #define MDF1(x)

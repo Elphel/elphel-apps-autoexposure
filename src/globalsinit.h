@@ -46,7 +46,7 @@
   extern unsigned long              this_frame;
   extern int                        autoexposure_debug;
 
-int initFilesMmap(int sensor_port);
+int initFilesMmap(int sensor_port, int sensor_subchannel);
 int initParams(int daemon_bit);
 
 

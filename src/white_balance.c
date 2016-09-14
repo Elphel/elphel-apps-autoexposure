@@ -74,7 +74,7 @@ void initWhiteBalanceCorr(void) {
 /// TODO: SupportT P_WB_MASK - now it is just ON/OFF. NOTE:When the bit is off it should be scaled with the G1 color!
 
 int whiteBalanceCorr(int frame, int target_frame, int ae_rslt) {
-   MDF3(fprintf(stderr,"frame=0x%x, target_frame=0x%x G_WB_INTEGERR=0x%08lx\n",frame,target_frame,GLOBALPARS_SNGL(G_WB_INTEGERR))); ///======= 0 here
+   MDF9(fprintf(stderr,"frame=0x%x, target_frame=0x%x G_WB_INTEGERR=0x%08lx\n",frame,target_frame,GLOBALPARS_SNGL(G_WB_INTEGERR))); ///======= 0 here
    int rslt;
    int colors;
    unsigned long write_data[18];

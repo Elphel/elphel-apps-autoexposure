@@ -57,7 +57,7 @@
  * uses global variables for files and mmap-ed data so they are accessible everywhere
  * @return 0 - OK, <0 - problems opening/mma-ing
  */
-int initFilesMmap(int sensor_port) {
+int initFilesMmap(int sensor_port, int sensor_subchannel) {
     const char *framepars_dev_names[SENSOR_PORTS] = {
             DEV393_PATH(DEV393_FRAMEPARS0),
             DEV393_PATH(DEV393_FRAMEPARS1),
@@ -90,6 +90,9 @@ int initFilesMmap(int sensor_port) {
      close (fd_fparmsall);
      return -1;
   }
+  // Select port and subchannel for histograms
+  lseek(fd_histogram_cache, LSEEK_HIST_SET_CHN + (4 * sensor_port) + sensor_subchannel, SEEK_END); /// specify port/sub-channel is needed
+
   histogram_cache = (struct histogram_stuct_t *) mmap(0, sizeof (struct histogram_stuct_t) * HISTOGRAM_CACHE_NUMBER , PROT_READ, MAP_SHARED, fd_histogram_cache, 0);
   if((int) histogram_cache == -1) {
      ELP_FERR(fprintf(stderr, "problems with mmap: %s\n", histogram_driver_name));
