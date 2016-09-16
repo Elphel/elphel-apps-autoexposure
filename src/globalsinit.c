@@ -67,13 +67,17 @@ int initFilesMmap(int sensor_port, int sensor_subchannel) {
   const char *framepars_driver_name=framepars_dev_names[sensor_port];
   const char histogram_driver_name[]=DEV393_PATH(DEV393_HISTOGRAM);
   const char gamma_driver_name[]=    DEV393_PATH(DEV393_GAMMA);
+  int total_hist_entries; // =8*4 for 4 sensors
+
 ///Frame parameters file open/mmap (read/write)
   fd_fparmsall= open(framepars_driver_name, O_RDWR);
   if (fd_fparmsall <0) {
      ELP_FERR(fprintf(stderr, "Open failed: (%s)\r\n", framepars_driver_name));
      return -1;
   }
-  frameParsAll = (struct framepars_all_t *) mmap(0, sizeof (struct framepars_all_t) * HISTOGRAM_CACHE_NUMBER , PROT_READ | PROT_WRITE, MAP_SHARED, fd_fparmsall, 0);
+//  frameParsAll = (struct framepars_all_t *) mmap(0, sizeof (struct framepars_all_t) * HISTOGRAM_CACHE_NUMBER , PROT_READ | PROT_WRITE, MAP_SHARED, fd_fparmsall, 0);
+  frameParsAll = (struct framepars_all_t *) mmap(0, sizeof (struct framepars_all_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd_fparmsall, 0);
+
   if((int) frameParsAll == -1) {
      ELP_FERR(fprintf(stderr, "problems with mmap: %s\n", framepars_driver_name));
      close (fd_fparmsall);
@@ -90,10 +94,10 @@ int initFilesMmap(int sensor_port, int sensor_subchannel) {
      close (fd_fparmsall);
      return -1;
   }
-  // Select port and subchannel for histograms
-  lseek(fd_histogram_cache, LSEEK_HIST_SET_CHN + (4 * sensor_port) + sensor_subchannel, SEEK_END); /// specify port/sub-channel is needed
+  // Select port and subchannel for histograms (result is the total number of histograms entries)
+  total_hist_entries = lseek(fd_histogram_cache, LSEEK_HIST_SET_CHN + (4 * sensor_port) + sensor_subchannel, SEEK_END); /// specify port/sub-channel is needed
 
-  histogram_cache = (struct histogram_stuct_t *) mmap(0, sizeof (struct histogram_stuct_t) * HISTOGRAM_CACHE_NUMBER , PROT_READ, MAP_SHARED, fd_histogram_cache, 0);
+  histogram_cache = (struct histogram_stuct_t *) mmap(0, sizeof (struct histogram_stuct_t) * total_hist_entries , PROT_READ, MAP_SHARED, fd_histogram_cache, 0);
   if((int) histogram_cache == -1) {
      ELP_FERR(fprintf(stderr, "problems with mmap: %s\n", histogram_driver_name));
      close (fd_fparmsall);

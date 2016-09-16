@@ -13,3 +13,4 @@ bitbake-logs
 *.o
 *.cgi
 bitbake-logs
+.depend

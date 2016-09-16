@@ -36,3 +36,10 @@ clean:
 #                REMOTE_USER=${REMOTE_USER}
 #                REMOTE_IP=${REMOTE_IP}
 
+depend: .depend
+
+.depend: $(SRCS)
+	rm -f ./.depend
+	$(CC) $(CFLAGS) -MM $^ > ./.depend;
+
+include .depend

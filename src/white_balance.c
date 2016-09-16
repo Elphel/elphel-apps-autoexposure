@@ -161,8 +161,10 @@ int whiteBalanceCorr(int frame, int target_frame, int ae_rslt) {
 /// Find the "brightest" color (maximal number of pixels above wb_whitelev ).  wb_whitelev is currently rounded to 8 bits
    max_white_pixels=0;
    num_pixels=histogram_cache[hist_index].cumul_hist[255+ (COLOR_Y_NUMBER<<8)]; /// this one is definitely calculated
+   // Because it is used for autoexposure? Check it is valid
    if (num_pixels < MIN_PIXELS_TO_ADJUST) {
-     ELP_FERR(fprintf(stderr, "Few pixels to process, giving up. num_pixels=%d, frame=%d (0x%x)\n", num_pixels, frame,frame));
+     ELP_FERR(fprintf(stderr, "Few pixels to process, giving up. num_pixels=%d, frame=%d (0x%x) valid=0x%lx\n",
+             num_pixels, frame,frame,histogram_cache[hist_index].valid));
      return -1;
    }
    min_white_pixels=num_pixels;
