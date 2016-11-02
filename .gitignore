@@ -14,4 +14,4 @@ bitbake-logs
 *.cgi
 bitbake-logs
 .depend
-/image/
+/image
