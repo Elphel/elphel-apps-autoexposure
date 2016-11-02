@@ -24,17 +24,7 @@ install: $(PROGS)
 	$(INSTALL) $(OWN) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL) -m $(INSTMODE) $(OWN) $(PROGS) $(DESTDIR)$(BINDIR)
 clean:
-	rm -rf $(PROGS) *.o core
-
-#                INSTALL=${ELPHEL393_INSTALL}
-#                MKNOD=${ELPHEL393_MKNOD}
-#                DESTDIR=${D}
-#                ELPHEL_KERNEL_DIR=${STAGING_KERNEL_DIR}
-#                STAGING_KERNEL_DIR=${STAGING_KERNEL_DIR}
-#                STAGING_DIR_HOST=${STAGING_DIR_HOST}
-#                USERADD='${ELPHEL393_USERADD}'
-#                REMOTE_USER=${REMOTE_USER}
-#                REMOTE_IP=${REMOTE_IP}
+	rm -rf $(PROGS) *.o core  .depend
 
 depend: .depend
 
