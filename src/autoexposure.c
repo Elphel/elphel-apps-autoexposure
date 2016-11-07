@@ -135,9 +135,10 @@ int main (int argc, char *argv[]) {
 
   daemon_bit=strtol(argv[6], NULL, 10);
   if ((daemon_bit<0) || (daemon_bit>31)) {printf ("Invalid bit number %d (should be 0..31)\n", daemon_bit); exit (1);}
-  fprintf(stderr,"autoexposure started, daemon_bit=0x%x, debug=0x%x\n",daemon_bit,autoexposure_debug);
+  fprintf(stderr,"autoexposure started, port = %d, daemon_bit=0x%x, debug=0x%x\n",sensor_port, daemon_bit,autoexposure_debug);
 //  MDF1(fprintf(stderr,"\n"));
   if (initFilesMmap(sensor_port, sensor_subchannel)<0) exit (1); /// initialization errors
+  MDF0(fprintf(stderr,"autoexposure: drivers initialized\n"));
   if (autoexposure_debug <0) { /// tempoorary hack for testing
     GLOBALPARS_SNGL(G_DEBUG)=0;
     exit (0);

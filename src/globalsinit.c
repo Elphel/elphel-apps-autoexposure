@@ -75,6 +75,13 @@ int initFilesMmap(int sensor_port, int sensor_subchannel) {
      ELP_FERR(fprintf(stderr, "Open failed: (%s)\r\n", framepars_driver_name));
      return -1;
   }
+  // Wait hardware to be initialized, so frame number >0 (otherwise histograms_cache will fail to open as it depends on number of subframes)
+  lseek(fd_fparmsall,1+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
+
+
+
+
+
 //  frameParsAll = (struct framepars_all_t *) mmap(0, sizeof (struct framepars_all_t) * HISTOGRAM_CACHE_NUMBER , PROT_READ | PROT_WRITE, MAP_SHARED, fd_fparmsall, 0);
   frameParsAll = (struct framepars_all_t *) mmap(0, sizeof (struct framepars_all_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd_fparmsall, 0);
 
