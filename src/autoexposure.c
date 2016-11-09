@@ -135,20 +135,23 @@ int main (int argc, char *argv[]) {
 
   daemon_bit=strtol(argv[6], NULL, 10);
   if ((daemon_bit<0) || (daemon_bit>31)) {printf ("Invalid bit number %d (should be 0..31)\n", daemon_bit); exit (1);}
-  fprintf(stderr,"autoexposure started, port = %d, daemon_bit=0x%x, debug=0x%x\n",sensor_port, daemon_bit,autoexposure_debug);
+  fprintf(stderr,"autoexposure#%d started, daemon_bit=0x%x, debug=0x%x\n",sensor_port, daemon_bit,autoexposure_debug);
 //  MDF1(fprintf(stderr,"\n"));
   if (initFilesMmap(sensor_port, sensor_subchannel)<0) exit (1); /// initialization errors
-  MDF0(fprintf(stderr,"autoexposure: drivers initialized\n"));
+  MDF0(fprintf(stderr,"autoexposure#%d: drivers initialized\n",sensor_port));
   if (autoexposure_debug <0) { /// tempoorary hack for testing
     GLOBALPARS_SNGL(G_DEBUG)=0;
     exit (0);
   }
-  MDF0(fprintf(stderr,"autoexposure started, daemon_bit=0x%x, debug=0x%x\n",daemon_bit,autoexposure_debug));
+  MDF0(fprintf(stderr,"autoexposure#%d started daemon_bit=0x%x, debug=0x%x\n", sensor_port,daemon_bit,autoexposure_debug));
 /// Next function call will wait until the daemon_bit will be enabled in [P_DAEMON_EN] giving a chance to other applications to initialize
 /// TODO: Find why earlier frames have bad histograms - frame 6 - 0 pixels, frame 7 - 0x3fff pixels and only 8-th has total_pixels=0x4c920
 /// For now - just wait for frame 9 (it will use histogram from frame 8)
 //  lseek(fd_fparmsall,9+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 2 frames (first got 0 pixels, 2- 0x3fff)
-  lseek(fd_fparmsall,10+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
+//  lseek(fd_fparmsall,10+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
+// with 10 - 3 bad frames
+
+  lseek(fd_fparmsall,14+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
 
   while (1) { /// restart loop
     if (initParams(daemon_bit)<0) exit (1); /// initialization errors
@@ -156,7 +159,7 @@ int main (int argc, char *argv[]) {
 
   while (1) {
       this_frame=GLOBALPARS_SNGL(G_THIS_FRAME);
-      MDF6(fprintf(stderr,"Waiting for autoexposure daemon to be enabled\n"));
+      MDF6(fprintf(stderr,"Waiting for autoexposure#% daemon to be enabled\n", sensor_port));
       lseek(fd_histogram_cache, LSEEK_DAEMON_HIST_Y+daemon_bit, SEEK_END);   /// wait for autoexposure daemon to be enabled (let it sleep if not)
       if (GLOBALPARS_SNGL(G_THIS_FRAME) != this_frame) {
 ///TODO: Make it possible for this_frame to lag slightly (1 frame) to compensate for CPU being busy with other tasks?
@@ -232,7 +235,7 @@ MDF8(fprintf(stderr, "this_frame= 0x%x, this_frame+exp_ahead= 0x%x, old_vexp= 0x
         MDF6(fprintf(stderr,"FRAME: 0x%lx, COLOR: %d, FRACTION: 0x%04lx RESULT:0x%04x, NOW: 0x%lx\n",next_frame-1,COLOR_Y_NUMBER,framePars[next_frame & PARS_FRAMES_MASK].pars[P_AEXP_FRACPIX],perc,GLOBALPARS_SNGL(G_THIS_FRAME)));
 */
     }
-    ELP_FERR(fprintf (stderr,"Restarting autoexposure due to errors, skipping a frame\n"));
+    ELP_FERR(fprintf (stderr,"(port %d): Restarting autoexposure due to errors, skipping a frame\n",sensor_port));
     lseek(fd_fparmsall, GLOBALPARS_SNGL(G_THIS_FRAME) + 1+LSEEK_FRAME_WAIT_ABS, SEEK_END);
 
   }

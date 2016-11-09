@@ -76,7 +76,7 @@ int initFilesMmap(int sensor_port, int sensor_subchannel) {
      return -1;
   }
   // Wait hardware to be initialized, so frame number >0 (otherwise histograms_cache will fail to open as it depends on number of subframes)
-  lseek(fd_fparmsall,1+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
+  lseek(fd_fparmsall,3 + LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
 
 
 
@@ -97,7 +97,7 @@ int initFilesMmap(int sensor_port, int sensor_subchannel) {
 ///Histogrames file open/mmap (readonly)
   fd_histogram_cache= open(histogram_driver_name, O_RDONLY);
   if (fd_histogram_cache <0) {
-     ELP_FERR(fprintf(stderr, "Open failed: (%s)\r\n", histogram_driver_name));
+     ELP_FERR(fprintf(stderr, "(port %d): Open failed: (%s)\r\n", sensor_port, histogram_driver_name));
      close (fd_fparmsall);
      return -1;
   }
@@ -106,7 +106,7 @@ int initFilesMmap(int sensor_port, int sensor_subchannel) {
 
   histogram_cache = (struct histogram_stuct_t *) mmap(0, sizeof (struct histogram_stuct_t) * total_hist_entries , PROT_READ, MAP_SHARED, fd_histogram_cache, 0);
   if((int) histogram_cache == -1) {
-     ELP_FERR(fprintf(stderr, "problems with mmap: %s\n", histogram_driver_name));
+     ELP_FERR(fprintf(stderr, "(port %d): problems with mmap: %s\n", sensor_port, histogram_driver_name));
      close (fd_fparmsall);
      close (fd_histogram_cache);
      return -1;
@@ -115,14 +115,14 @@ int initFilesMmap(int sensor_port, int sensor_subchannel) {
 ///Gamma tables file open/mmap (readonly)
   fd_gamma_cache= open(gamma_driver_name, O_RDWR);
   if (fd_gamma_cache <0) {
-     ELP_FERR(fprintf(stderr, "Open failed: (%s)\r\n", gamma_driver_name));
+     ELP_FERR(fprintf(stderr, "(port %d): Open failed: (%s)\r\n", sensor_port, gamma_driver_name));
      close (fd_fparmsall);
      close (fd_histogram_cache);
      return -1;
   }
   gamma_cache = (struct gamma_stuct_t *) mmap(0, sizeof (struct gamma_stuct_t) * GAMMA_CACHE_NUMBER , PROT_READ, MAP_SHARED, fd_gamma_cache, 0);
   if((int) gamma_cache == -1) {
-     ELP_FERR(fprintf(stderr, "problems with mmap: %s\n", gamma_driver_name));
+     ELP_FERR(fprintf(stderr, "(port %d): problems with mmap: %s\n", sensor_port, gamma_driver_name));
      close (fd_fparmsall);
      close (fd_histogram_cache);
      close (fd_gamma_cache);
