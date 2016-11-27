@@ -133,7 +133,7 @@ long getPercentile(unsigned long frame,int color, unsigned long fraction, int re
      else                                        lseek(fd_histogram_cache, LSEEK_HIST_WAIT_Y, SEEK_END); /// wait for just Y (G1)
     MDF2(fprintf(stderr,"this_frame: 0x%lx,  NOW: 0x%lx\n",this_frame, GLOBALPARS_SNGL(G_THIS_FRAME)));
      lseek(fd_histogram_cache, LSEEK_HIST_NEEDED + (request_colors << 8), SEEK_END);      /// specify that reverse histogram(s) are needed
-     hist_index=lseek(fd_histogram_cache, frame, SEEK_SET);                             /// request histograms for the specified frame
+     hist_index=lseek(fd_histogram_cache, frame, SEEK_SET);                               /// request histograms for the specified frame
     MDF2(fprintf(stderr,"got histogram for frame: 0x%lx,  NOW: 0x%lx\n",histogram_cache[hist_index].frame, GLOBALPARS_SNGL(G_THIS_FRAME)));
 /// histograms for frame will be available 1 frame later
      if(hist_index <0) {

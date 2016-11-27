@@ -151,7 +151,10 @@ int main (int argc, char *argv[]) {
 //  lseek(fd_fparmsall,10+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
 // with 10 - 3 bad frames
 
-  lseek(fd_fparmsall,14+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
+  MDF0(fprintf(stderr,"autoexposure#%d this_frame = 0x%x\n", sensor_port, (int) GLOBALPARS_SNGL(G_THIS_FRAME)));
+//  lseek(fd_fparmsall,14+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
+  lseek(fd_fparmsall,20+LSEEK_FRAME_WAIT_ABS, SEEK_END); /// skip 3 frames (first got 0 pixels, 2- 0x3fff) - one extra, sometimes it is needed
+  MDF0(fprintf(stderr,"frame 14: autoexposure#%d this_frame = 0x%x\n", sensor_port, (int) GLOBALPARS_SNGL(G_THIS_FRAME)));
 
   while (1) { /// restart loop
     if (initParams(daemon_bit)<0) exit (1); /// initialization errors
