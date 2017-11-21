@@ -15,6 +15,9 @@ bitbake-logs
 bitbake-logs
 .depend
 
+all_sources.lst
+excluding.lst
+including.lst
 doxygen.tag
 /image
 /scripts
