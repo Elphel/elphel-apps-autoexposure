@@ -112,7 +112,7 @@ int aexpCorr(int color, int frame, int target_frame) {
   }
   if (GLOBALPARS_SNGL(G_NEXT_AE_FRAME)>frame) return 0; /// too early to bother
 
-  MDF3(fprintf(stderr,"*ae_err=%d\n",*ae_err)); ///======= 0 here
+  MDF3(fprintf(stderr,"Accumulated error *ae_err=%d\n",*ae_err)); ///======= 0 here
 
   frac=framePars[target_frame & PARS_FRAMES_MASK].pars[P_AEXP_FRACPIX];
 //  level=framePars[target_frame & PARS_FRAMES_MASK].pars[P_AEXP_LEVEL];
@@ -139,7 +139,7 @@ int aexpCorr(int color, int frame, int target_frame) {
     }
   }
   level_gamma=framePars[target_frame & PARS_FRAMES_MASK].pars[P_AEXP_LEVEL];
-/// calculate sensor level from gamma_level using gamma table whisth hash32 saved at hist_index 
+/// calculate sensor level from gamma_level using gamma table with hash32 saved at hist_index
   level=gammaReverse (level_gamma);
   MDF3(fprintf(stderr,"->>> frame=0x%x, target_frame=0x%x,dim=0x%04x, frac=0x%04x, level=0x%x,level_gamma=0x%x, perc=0x%04x\n",frame,target_frame,dim,frac,level,level_gamma,perc));
   if (perc <0) {
@@ -147,10 +147,12 @@ int aexpCorr(int color, int frame, int target_frame) {
      return -1; ///getPercentile() failed
   }
 ///
-/// overexposure recovery
+/// overexposure recovery. Triggered if the percentile is above middle point between the set level and 0xffff
 ///
 //  if (perc > ((level+0xffff)>>1)) {
-  if ((perc > ((level_gamma+0x1ffff)>>2))&& (perc>0xf000) ) {
+///  if ((perc > ((level_gamma+0x1ffff)>>2))&& (perc>0xf000) ) {
+///  if ((perc > ((level_gamma+0x2ffff)>>2))&& (perc>0xf000) ) {
+  if ((perc > ((level_gamma+0xffff)>>1))&& (perc>0xf000) ) { // more that a middle between level and upper limit of 0xfff
      aex_recover_cntr++; /// global counter
 ///NOTE: Maybe just dividing exposure by 2 /counter is enough?
 
